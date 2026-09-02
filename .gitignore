@@ -1,0 +1,52 @@
+.vscode/
+.vs/
+.gradle/
+.act/
+.qtcreator/
+
+local.properties
+
+java_pid*.hprof
+.DS_Store
+*.pdb
+
+.cxx/
+
+.anygl-config/
+build*/
+**/build*/
+dist/
+out/
+
+# 运行产物
+stdout.txt
+stderr.txt
+*.sav
+savedata/
+
+# demo 游戏数据（体积大 / 游戏版权内容，不入库；自行放置）
+demo/arc*.nsa
+demo/nscript.dat
+demo/nscript.___
+demo/onscript.nt2
+demo/onscript.nt3
+demo/default.ttf
+demo/zy.jpg
+demo/OP/
+
+# 调研临时产物
+sdl_syms.txt
+
+# ����ת������
+ons_marker.txt
+ons_dump_*.bmp
+ons_exc.txt
+
+ons_dump2.txt
+ons_dump_txt.bmp
+ons_evt.txt
+
+# debug layer dumps & window caps (dev harness)
+_cap*.png
+demo/savedata/*_/
+

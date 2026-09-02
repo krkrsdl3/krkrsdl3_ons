@@ -1,0 +1,130 @@
+// ============================================================================
+// demo/startup.tjs —— krkrsdl3 × Onscripter 最小启动
+//
+// 用法：krkrsdl3_ons.exe C:/完整/路径/demo/
+//  （argv[1] = 游戏目录，**必须为完整路径且以 / 结尾**）
+// 编码：中文游戏 GBK；日文原版请把 setEncoding 改为 "sjis"
+// ============================================================================
+
+Plugins.link("onscripter.dll");
+
+var myApp = %[];
+
+// 窗口
+myApp.mainWindow = new ONSWindow();
+myApp.mainWindow.setInnerSize(640, 480);
+myApp.mainWindow.visible = 1;
+myApp.mainWindow.caption = "Onscripter";
+myApp.mainWindow.showScrollBars = false;
+System.title = "Onscripter";
+
+// 窗口子类：窗口级按键转发。krkrsdl3 Core 的 LayerManager 自动聚焦被注释
+// （CheckTreeFocusableState 内 auto-focus 代码未启用），FocusedLayer 恒空 ->
+// PrimaryKeyDown 只走 DefaultKeyDown，层事件 onKeyDown 永远到不了 ONSLayer；
+// 而 TVPWindow::OnKeyDown 无条件向窗口 Owner 投递事件，故在窗口子类转发。
+class ONSWindow extends Window
+{
+    function ONSWindow()
+    {
+        super.Window();
+    }
+    function onKeyDown(key, shift, process)
+    {
+        if (myApp.onsLayer !== void && myApp.onsLayer.onsEngine !== void)
+            myApp.onsLayer.onsEngine.onKeyDown(key, shift);
+        super.onKeyDown(...);
+    }
+    function onKeyUp(key, shift, process)
+    {
+        if (myApp.onsLayer !== void && myApp.onsLayer.onsEngine !== void)
+            myApp.onsLayer.onsEngine.onKeyUp(key, shift);
+        super.onKeyUp(...);
+    }
+    // 鼠标同样走窗口级转发：TVPWindow::OnMouse* 无条件向窗口 Owner 投递，
+    // 不依赖"命中主层"（点击落在精灵/按钮层或被捕获时层级事件到不了
+    // ONSLayer -> 点击"没反应"）。ONSLayer 的鼠标方法因此不再转发（防双份）。
+    function onMouseDown(x, y, button, shift)
+    {
+        if (myApp.onsLayer !== void && myApp.onsLayer.onsEngine !== void)
+            myApp.onsLayer.onsEngine.onMouseDown(x, y, button, shift);
+        super.onMouseDown(...);
+    }
+    function onMouseUp(x, y, button, shift)
+    {
+        if (myApp.onsLayer !== void && myApp.onsLayer.onsEngine !== void)
+            myApp.onsLayer.onsEngine.onMouseUp(x, y, button, shift);
+        super.onMouseUp(...);
+    }
+    function onMouseMove(x, y, flags)
+    {
+        if (myApp.onsLayer !== void && myApp.onsLayer.onsEngine !== void)
+            myApp.onsLayer.onsEngine.onMouseMove(x, y, flags);
+        super.onMouseMove(...);
+    }
+}
+
+// onsLayer
+class ONSLayer extends Layer
+{
+    // ons引擎
+    var onsEngine;
+    // 构造函数
+    function ONSLayer(win, par)
+	{
+		super.Layer(win, par);
+        onsEngine = new ONSEngine(win, this);
+        onsEngine.setArchivePath("");         // 留空 = 使用项目目录（argv[1]）
+        onsEngine.setFontFile("default.ttf"); // 游戏自带字体
+        onsEngine.setEncoding("gbk");         // 中文版 CLANNAD 为 GBK
+        onsEngine.start();
+        // 按脚本分辨率调整窗口（脚本 setwindow $modeNNN 时有效）
+        win.setInnerSize(onsEngine.width, onsEngine.height);
+        // 注意：不在此处自动读档。开局状态由 gloval.sav 决定（上游
+        // saveGlovalData/globalon 语义）：引擎启动时读取 gloval.sav（%911 等
+        // 全局变量）；无 gloval.sav -> 从 *start 播放 30s 注意事项；
+        // 有 -> 直接进 *title0。存档/读档走游戏内 savegame/loadgame。
+        this.callOnPaint = true;
+	}
+    // 析构函数
+	function finalize()
+	{
+		invalidate onsEngine if onsEngine !== void;
+		super.finalize(...);
+	}
+
+    // Layer相关事件
+    function onPaint()
+	{
+		super.onPaint(...);
+	}
+    function onMouseDown(x, y, button, shift)
+	{
+		// 鼠标按下（窗口级 ONSWindow 转发；此处不再转发以免双份）
+		super.onMouseDown(...);
+	}
+
+	function onMouseUp(x, y, button, shift)
+	{
+		// 鼠标抬起（窗口级转发）
+		super.onMouseUp(...);
+	}
+    function onMouseMove(x, y, flags)
+	{
+		// 鼠标移动（窗口级转发）
+		super.onMouseMove(...);
+	}
+
+    function onKeyDown(key, shift, process)
+	{
+		// 键盘按下
+        onsEngine.onKeyDown(key, shift);
+		super.onKeyDown(...);
+	}
+	function onKeyUp(key, shift, process)
+	{
+        // 键盘抬起
+        onsEngine.onKeyUp(key, shift);
+        super.onKeyUp(...);
+	}
+}
+myApp.onsLayer = new ONSLayer(myApp.mainWindow, null);
